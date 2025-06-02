@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>도전노래방</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', Arial, sans-serif;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        #search-container {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            width: 80%;
+            max-width: 1000px;
+            box-sizing: border-box;
+        }
+
+        #search-container input[type="text"],
+        #search-container input[type="number"] {
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            flex-grow: 1;
+            min-width: 120px;
+            box-sizing: border-box;
+        }
+
+        #search-container input[type="text"]:focus,
+        #search-container input[type="number"]:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+
+        #search-container button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        #search-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .input_mo {
+            display: flex;
+            gap: 10px;
+            flex-grow: 1;
+        }
+        .input_mo input[type="number"]{
+            min-width: 80px;
+        }
+
+
+        #random-list {
+            margin-top: 20px;
+            display: grid;
+            grid-gap: 1rem;
+            justify-content: center;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .random-video {
+            width: 150px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            box-sizing: border-box;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s ease;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .random-video:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .random-video.clicked {
+            background-color: #e9ecef !important;
+            color: #495057;
+            /* clicked 상태에서는 더 이상 클릭되지 않도록 */
+            /* pointer-events: none; - 전체 random-video에 적용하면 확장된 제목도 클릭 안됨 */
+        }
+
+        .video-title {
+            display: none; /* 기본 숨김 */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            width: 80%;
+            max-width: 600px;
+            height: auto;
+            max-height: 80%;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            z-index: 1001;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+            pointer-events: auto;
+            height: 50%;
+        }
+
+        .video-title div {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            hyphens: auto;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .close-btn {
+            display: none; /* 기본 숨김 */
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            font-size: 28px;
+            font-weight: bold;
+            color: #ff6b6b;
+            transition: color 0.2s ease;
+            line-height: 1;
+            pointer-events: auto;
+        }
+
+        .close-btn:hover {
+            color: #e03131;
+        }
+
+        .random-video.expanded {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5) !important;
+            z-index: 1000;
+            cursor: default;
+            pointer-events: auto;
+            border-radius: 0;
+            box-shadow: none;
+            color: transparent;
+            font-size: 0;
+        }
+
+        body.modal-open #random-list .random-video:not(.expanded) {
+            pointer-events: none;
+        }
+        body.modal-open #random-list .random-video.expanded {
+            pointer-events: auto;
+        }
+
+        .random-video.expanded .video-title {
+            display: flex;
+        }
+        .random-video.expanded .close-btn {
+            display: block;
+        }
+
+        /* 게임 종료 메시지 스타일 */
+        #game-over-message {
+            margin-top: 30px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #d9534f; /* 경고색 */
+            text-align: center;
+            display: none; /* 기본 숨김 */
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+
+        @media (max-width: 1023px) {
+            body {
+                padding: 10px;
+            }
+            #search-container {
+                flex-direction: column;
+                align-items: stretch;
+                width: calc(100% - 20px);
+            }
+            #search-container input[type="text"],
+            #search-container input[type="number"],
+            #search-container .input_mo {
+                width: 100%;
+            }
+
+            #random-list {
+                grid-gap: 0.5rem;
+            }
+
+            .random-video {
+                font-size: 1rem;
+                min-height: 100px;
+            }
+            
+            .video-title {
+                width: calc(100% - 40px);
+                padding: 15px;
+                height: 30%;
+            }
+            .video-title div {
+                font-size: 1rem;
+            }
+            #game-over-message {
+                font-size: 1.4rem;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="search-container">
+        <input type="text" id="artist-query" placeholder="가수 검색" />
+        <input type="text" id="genre-query" placeholder="장르 검색" />
+        <input type="text" id="lyrics-query" placeholder="가사 검색" />
+        <div class="input_mo">
+            <input type="number" id="cols-query" placeholder="가로 갯수" min="1" />
+            <input type="number" id="rows-query" placeholder="세로 갯수" min="1" />
+        </div>
+        <button onclick="searchArtist()">검색</button>
+    </div>
+    <div id="random-list"></div>
+    <div id="game-over-message">도전 노래방이 끝났습니다! 다시 도전하세요.</div>
+
+    <script>
+        let randomVideos = [];
+        let clickedVideoCount = 0; // 클릭된 비디오 개수를 추적하는 변수
+        // 주의: 실제 서비스에서는 API 키를 클라이언트 사이드 코드에 직접 노출하는 것은 보안상 위험합니다.
+        // 서버를 통해 API를 호출하는 것이 좋습니다.
+        const API_KEY = 'AIzaSyDLbuLCiZW91Igu7ECUb8OvjvedJ3nxgzY'; // 여기에 실제 YouTube API 키를 넣어주세요.
+
+        async function searchArtist() {
+            const artist = document.getElementById('artist-query').value;
+            const genre = document.getElementById('genre-query').value;
+            const lyrics = document.getElementById('lyrics-query').value;
+            const rowsInput = document.getElementById('rows-query').value;
+            const colsInput = document.getElementById('cols-query').value;
+
+            if (!rowsInput || !colsInput) {
+                alert('가로 및 세로 개수를 모두 입력해주세요.');
+                return;
+            }
+            const rows = parseInt(rowsInput);
+            const cols = parseInt(colsInput);
+            
+            if (isNaN(rows) || isNaN(cols) || rows < 1 || cols < 1) {
+                alert('가로 및 세로 개수는 1 이상의 숫자로 입력해주세요.');
+                return;
+            }
+
+            const totalVideos = rows * cols;
+
+            if (totalVideos < 1) {
+                alert('총 비디오 개수는 1개 이상이어야 합니다.');
+                return;
+            }
+            if (totalVideos > 50) {
+                alert('총 비디오 개수는 50개를 초과할 수 없습니다.');
+                return;
+            }
+
+            let query = artist + " 노래방";
+            if (genre) {
+                query += ` ${genre}`;
+            }
+            if (lyrics) {
+                query += ` ${lyrics}`;
+            }
+
+            // 게임 종료 메시지 숨김
+            document.getElementById('game-over-message').style.display = 'none';
+            clickedVideoCount = 0; // 새 검색 시작 시 클릭된 비디오 개수 초기화
+
+            try {
+                let allVideos = [];
+                let nextPageToken = '';
+                const desiredVideoCount = totalVideos * 2;
+                const maxResultsPerPage = Math.min(50, desiredVideoCount);
+
+                while (allVideos.length < desiredVideoCount) {
+                    const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${maxResultsPerPage}&type=video&q=${encodeURIComponent(query)}&pageToken=${nextPageToken}&key=${API_KEY}`);
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`YouTube API 오류: ${errorData.error.message}`);
+                    }
+                    const data = await response.json();
+                    if (data.items) {
+                        allVideos.push(...data.items);
+                    }
+                    nextPageToken = data.nextPageToken;
+                    if (!nextPageToken || !data.items || data.items.length === 0) break;
+                }
+
+                allVideos = allVideos.filter(video => video.snippet && video.snippet.title && video.snippet.title.length <= 100 && video.id.videoId);
+
+                if (allVideos.length < totalVideos && allVideos.length === 0) {
+                    document.getElementById('random-list').innerHTML = '<p>검색 결과가 없습니다. 다른 검색어로 시도해보세요.</p>';
+                    return;
+                }
+                
+                randomVideos = shuffleArray(allVideos).slice(0, totalVideos);
+                if (randomVideos.length === 0 && allVideos.length > 0) {
+                     randomVideos = shuffleArray(allVideos).slice(0, allVideos.length);
+                }
+
+                displayRandomList(rows, cols);
+
+            } catch (error) {
+                console.error('Error fetching videos:', error);
+                alert(`비디오를 가져오는 중 오류가 발생했습니다: ${error.message}`);
+                document.getElementById('random-list').innerHTML = `<p>오류 발생: ${error.message}</p>`;
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function displayRandomList(rows, cols) {
+            const randomListContainer = document.getElementById('random-list');
+            randomListContainer.innerHTML = '';
+
+            const actualTotalVideos = randomVideos.length;
+            if (actualTotalVideos === 0) {
+                randomListContainer.innerHTML = '<p>표시할 비디오가 없습니다.</p>';
+                return;
+            }
+
+            const isMobile = window.innerWidth <= 1023;
+            let gridCols = isMobile ? Math.min(cols, 3) : cols;
+            
+            randomListContainer.style.gridTemplateColumns = `repeat(${gridCols}, 1fr)`;
+
+            randomVideos.forEach((video, index) => {
+                if (!video || !video.snippet || !video.id || !video.id.videoId) {
+                    console.warn('Invalid video data at index:', index, video);
+                    return;
+                }
+
+                const videoElement = document.createElement('div');
+                videoElement.className = 'random-video';
+                videoElement.textContent = index + 1;
+
+                const videoTitleContainer = document.createElement('div');
+                videoTitleContainer.className = 'video-title';
+
+                const videoTitleText = document.createElement('div');
+                videoTitleText.textContent = video.snippet.title;
+                
+                videoTitleContainer.appendChild(videoTitleText);
+
+                const openLinkButton = document.createElement('button');
+                openLinkButton.textContent = '노래 재생하기';
+                openLinkButton.style.padding = '8px 15px';
+                openLinkButton.style.backgroundColor = '#28a745';
+                openLinkButton.style.color = 'white';
+                openLinkButton.style.border = 'none';
+                openLinkButton.style.borderRadius = '5px';
+                openLinkButton.style.cursor = 'pointer';
+                openLinkButton.style.marginTop = '10px';
+                openLinkButton.onclick = (e) => {
+                    e.stopPropagation();
+                    window.open(`https://www.youtube.com/watch?v=${video.id.videoId}`, '_blank'); // YouTube URL을 올바르게 수정
+                };
+                videoTitleContainer.appendChild(openLinkButton);
+
+
+                const closeBtn = document.createElement('span');
+                closeBtn.className = 'close-btn';
+                closeBtn.textContent = '×';
+                closeBtn.onclick = (event) => {
+                    event.stopPropagation();
+                    videoElement.classList.remove('expanded');
+                    document.body.classList.remove('modal-open');
+                    // 닫기 버튼 클릭 시 검색 입력 필드로 포커스 이동
+                    document.getElementById('artist-query').focus(); 
+                };
+                videoTitleContainer.appendChild(closeBtn);
+
+                videoElement.appendChild(videoTitleContainer);
+
+                videoElement.addEventListener('click', (event) => {
+                    if (videoElement.classList.contains('expanded') && event.target === videoElement) {
+                        videoElement.classList.remove('expanded');
+                        document.body.classList.remove('modal-open');
+                        document.getElementById('artist-query').focus(); // 배경 클릭 시에도 포커스 이동
+                        return;
+                    }
+
+                    const currentlyExpanded = document.querySelector('.random-video.expanded');
+                    if (currentlyExpanded && currentlyExpanded !== videoElement) {
+                        currentlyExpanded.classList.remove('expanded');
+                    }
+                    
+                    // 클릭된 비디오가 이미 'clicked' 상태가 아니라면 clickedVideoCount 증가
+                    if (!videoElement.classList.contains('clicked')) {
+                        clickedVideoCount++;
+                    }
+
+                    videoElement.classList.toggle('expanded');
+                    if(videoElement.classList.contains('expanded')) {
+                        videoElement.classList.add('clicked');
+                        document.body.classList.add('modal-open');
+                    } else {
+                        document.body.classList.remove('modal-open');
+                    }
+
+                    // 모든 비디오가 클릭되었는지 확인
+                    if (clickedVideoCount === randomVideos.length) {
+                        document.getElementById('game-over-message').style.display = 'block';
+                    } else {
+                        document.getElementById('game-over-message').style.display = 'none';
+                    }
+                });
+                randomListContainer.appendChild(videoElement);
+            });
+        }
+    </script>
+</body>
+</html>
