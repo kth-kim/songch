@@ -116,7 +116,7 @@
             background-color: #e9ecef !important;
             color: #495057;
             /* clicked 상태에서는 더 이상 클릭되지 않도록 */
-            /* pointer-events: none; - 전체 random-video에 적용하면 확장된 제목도 클릭 안됨 */
+            pointer-events: none; /* - 전체 random-video에 적용하면 확장된 제목도 클릭 안됨 */
         }
 
         .video-title {
@@ -304,8 +304,8 @@
                 alert('총 비디오 개수는 1개 이상이어야 합니다.');
                 return;
             }
-            if (totalVideos > 50) {
-                alert('총 비디오 개수는 50개를 초과할 수 없습니다.');
+            if (totalVideos > 100) {
+                alert('총 비디오 개수는 100개를 초과할 수 없습니다.');
                 return;
             }
 
