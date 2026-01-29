@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charming_Jo Edition - Random Karaoke</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f0f0f; /* 조매력님 방송 특유의 다크한 감성 */
+            --card-bg: #1e1e1e;
+            --accent-gold: #eccc68;
+            --accent-red: #ff4757;
+            --text-white: #ffffff;
+        }
+
+        body {
+            font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-white);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* 언어 전환 버튼 */
+        .lang-switch {
+            position: absolute; top: 20px; right: 20px;
+            display: flex; gap: 5px;
+        }
+        .lang-btn {
+            background: #333; color: white; border: 1px solid #555;
+            padding: 5px 10px; cursor: pointer; border-radius: 5px; font-size: 12px;
+        }
+        .lang-btn.active { background: var(--accent-gold); color: black; font-weight: bold; }
+
+        header {text-align: center;}
+        header h1 { color: var(--accent-gold); font-size: 2.2rem; margin-bottom: 5px; }
+        header p { color: #888; margin-bottom: 30px; }
+
+        #search-container {
+            background-color: var(--card-bg); padding: 25px;
+            border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex; flex-wrap: wrap; gap: 10px;
+            width: 90%; max-width: 900px; box-sizing: border-box;
+            border: 1px solid #333;
+        }
+
+        input {
+            padding: 12px; border: 1px solid #444; background: #2a2a2a;
+            color: white; border-radius: 8px; font-size: 14px; flex-grow: 1;
+        }
+
+        button.main-btn {
+            padding: 12px 30px; background-color: var(--accent-gold);
+            color: black; border: none; border-radius: 8px;
+            cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+
+        /* 숫자 카드 그리드 */
+        #random-list {
+            display: grid; grid-gap: 15px; width: 100%;
+            max-width: 900px; margin-top: 30px;
+        }
+
+        .random-video {
+            aspect-ratio: 1; background-color: var(--card-bg);
+            color: var(--accent-gold); display: flex; align-items: center;
+            justify-content: center; border-radius: 12px; cursor: pointer;
+            font-size: 1.8rem; font-weight: bold; transition: 0.3s;
+            border: 2px solid #333;
+        }
+
+        .random-video.disabled {
+        background-color: #1a1a1a !important;
+        color: #444 !important;
+        border-color: #222 !important;
+        cursor: default !important;
+        transform: none !important;
+        box-shadow: none !important;
+        }
+
+        .random-video:hover { 
+            transform: translateY(-5px); border-color: var(--accent-gold);
+            box-shadow: 0 0 15px rgba(236, 204, 104, 0.3);
+        }
+
+        /* 결과 모달 */
+        .modal-overlay {
+            display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.85); z-index: 1000;
+        }
+        .video-title {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 85%; max-width: 450px; background: #222; padding: 40px;
+            border-radius: 20px; border: 1px solid var(--accent-gold);
+            text-align: center; z-index: 1001;
+        }
+
+        .mission-badge {
+            background-color: rgba(236, 204, 104, 0.1); color: var(--accent-gold);
+            padding: 10px; border-radius: 10px; border: 1px dashed var(--accent-gold);
+            font-weight: bold; margin-bottom: 25px;
+        }
+
+        .play-btn {
+            padding: 12px 25px; background: #28a745; color: white;
+            border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="lang-switch">
+        <button class="lang-btn active" onclick="setLang('ko')">KO</button>
+        <button class="lang-btn" onclick="setLang('en')">EN</button>
+    </div>
+
+    <header>
+        <h1 id="txt-title">🎤 도전! 랜덤 노래방</h1>
+        <p id="txt-subtitle">스트리머의 음악적 스펙트럼을 보여주세요!</p>
+    </header>
+
+    <div id="search-container">
+        <input type="text" id="artist-query" placeholder="가수(Artist)" />
+        <input type="text" id="genre-query" placeholder="장르(Genre/Vibe)" />
+        <input type="number" id="cols-query" value="4" style="width: 60px;" />
+        <input type="number" id="rows-query" value="3" style="width: 60px;" />
+        <button class="main-btn" id="txt-search-btn" onclick="searchArtist()">START</button>
+    </div>
+
+    <div id="random-list"></div>
+
+    <div class="modal-overlay" id="overlay" onclick="closeModal()">
+        <div class="video-title" onclick="event.stopPropagation()">
+            <div id="disp-title" style="font-size: 1.4rem; margin-bottom: 10px;">Song Title</div>
+            <div id="disp-mission" class="mission-badge">Mission Here</div>
+            <button class="play-btn" id="txt-play-btn" onclick="playVideo()">노래 재생 / Play</button>
+            <p onclick="closeModal()" style="cursor:pointer; color:#888; margin-top:20px;">[ Close ]</p>
+        </div>
+    </div>
+
+    <script>
+        let randomVideos = [];
+        let currentVideoId = "";
+        let currentLang = 'ko';
+        let currentOpenedIndex = null; // 현재 열려있는 카드의 인덱스 추적
+        let openedSet = new Set();    // 이미 열었던 카드 번호 저장
+
+        const i18n = {
+            ko: {
+                title: "🎤 도전! 랜덤 노래방",
+                subtitle: "스트리머의 음악적 스펙트럼을 보여주세요!",
+                search: "도전 시작",
+                play: "노래 재생하기",
+                noResult: "결과가 없습니다.",
+                missions: [
+                    "🎷 재즈(Jazz) 버전으로 편곡해서 부르기",
+                    "🎻 오페라/성악 발성으로 부르기",
+                    "🎸 락 발성(Growling) 섞어서 부르기",
+                    "🎹 아카펠라로 1절 부르기",
+                    "🕺 그루브 넘치는 댄스와 함께 부르기",
+                    "🎤 비트박스(Beatbox)를 중간에 넣기"
+                ]
+            },
+            en: {
+                title: "🎤 Random Mission Karaoke",
+                subtitle: "Show your musical spectrum",
+                search: "START CHALLENGE",
+                play: "Play Music",
+                noResult: "No results found.",
+                missions: [
+                    "🎷 Rearrange in JAZZ style",
+                    "🎻 Sing in Opera/Classical style",
+                    "🎸 Sing with Rock Spirit (Growling)",
+                    "🎹 Sing Acappella for the 1st verse",
+                    "🕺 Sing with funky dance moves",
+                    "🎤 Add some Beatboxing in the middle"
+                ]
+            }
+        };
+
+        function setLang(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('txt-title').innerText = i18n[lang].title;
+            document.getElementById('txt-subtitle').innerText = i18n[lang].subtitle;
+            document.getElementById('txt-search-btn').innerText = i18n[lang].search;
+            document.getElementById('txt-play-btn').innerText = i18n[lang].play;
+        }
+
+        const API_KEY = 'AIzaSyDLbuLCiZW91Igu7ECUb8OvjvedJ3nxgzY'; 
+
+        async function searchArtist() {
+            const artist = document.getElementById('artist-query').value;
+            const genre = document.getElementById('genre-query').value;
+            const rows = parseInt(document.getElementById('rows-query').value);
+            const cols = parseInt(document.getElementById('cols-query').value);
+            const total = rows * cols;
+
+            let query = `${artist} 노래방 ${genre}`.trim();
+
+            try {
+                const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&type=video&q=${encodeURIComponent(query)}&key=${API_KEY}`);
+                const data = await res.json();
+                
+                if(!data.items) { alert(i18n[currentLang].noResult); return; }
+
+                randomVideos = data.items.sort(() => Math.random() - 0.5).slice(0, total);
+                renderGrid(cols);
+            } catch(e) { console.error(e); }
+        }
+
+        function renderGrid(cols) {
+        const list = document.getElementById('random-list');
+        list.innerHTML = '';
+        list.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        openedSet.clear(); // 새 게임 시작 시 초기화
+
+        randomVideos.forEach((v, i) => {
+            const box = document.createElement('div');
+            box.className = 'random-video';
+            box.id = `card-${i}`; // ID 부여
+            box.innerText = i + 1;
+            box.onclick = () => openModal(i);
+            list.appendChild(box);
+        });
+    }
+        function openModal(i) {
+        // 이미 열었던 카드라면 무시
+        if (openedSet.has(i)) return;
+
+        currentOpenedIndex = i; // 현재 몇 번을 열었는지 저장
+        const v = randomVideos[i];
+        currentVideoId = v.id.videoId;
+        
+        document.getElementById('disp-title').innerText = v.snippet.title;
+        const mList = i18n[currentLang].missions;
+        document.getElementById('disp-mission').innerText = "✨ " + mList[Math.floor(Math.random() * mList.length)];
+        
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+        function playVideo() {
+            window.open(`https://www.youtube.com/watch?v=${currentVideoId}`, '_blank');
+    }
+
+        function closeModal() {
+        if (currentOpenedIndex !== null) {
+            // 1. 해당 인덱스를 '연 상태'로 기록
+            openedSet.add(currentOpenedIndex);
+            
+            // 2. 해당 카드 엘리먼트를 찾아 스타일 변경
+            const card = document.getElementById(`card-${currentOpenedIndex}`);
+            if (card) {
+                card.classList.add('disabled');
+            }
+        }
+        
+        // 3. 모달 닫기
+        document.getElementById('overlay').style.display = 'none';
+        
+        // 4. 모든 카드를 다 열었는지 확인 (지연 시간을 주어 자연스럽게 연출)
+        if (openedSet.size === randomVideos.length && randomVideos.length > 0) {
+            setTimeout(() => {
+                const message = currentLang === 'ko' 
+                    ? "✨ 모든 도전을 완료했습니다!\n다시 도전하시겠습니까? (y/n)" 
+                    : "✨ All challenges completed!\nWould you like to try again? (y/n)";
+                
+                if (confirm(message)) {
+                    // 'y' 선택 시 페이지 새로고침 또는 검색창으로 스크롤
+                    location.reload(); 
+                } else {
+                    // 'n' 선택 시 아무 작업 안 함
+                    alert(currentLang === 'ko' ? "고생하셨습니다!" : "Great job today!");
+                }
+            }, 500);
+        }
+
+        currentOpenedIndex = null;
+    }
+    </script>
+</body>
+</html>
